@@ -1,0 +1,44 @@
+jobs:
+  build-test-push:
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run tests
+        run: |
+          source venv/bin/activate
+          python manage.py test
+
+      - name: Log in to Docker Hub
+        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Build image
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-app:${{ github.sha }} -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-app:latest .
+
+      - name: Push image
+        run: |
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-app:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-app:latest
+
+  deploy:
+    needs: build-test-push
+    runs-on: [self-hosted, linux]
+    steps:
+      - name: Deploy to App Server
+        run: |
+          ssh -o StrictHostKeyChecking=no vagrant@192.168.56.11 \
+          'docker pull ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-app:latest && \
+           docker compose -f /opt/app/docker-compose.yml up -d --force-recreate app'
