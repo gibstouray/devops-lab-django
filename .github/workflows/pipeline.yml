@@ -42,6 +42,6 @@ jobs:
     steps:
       - name: Deploy to App Server
         run: |
-          ssh -o StrictHostKeyChecking=no vagrant@192.168.56.11 \
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no vagrant@192.168.56.11 \
           'docker pull ${{ secrets.DOCKERHUB_USERNAME }}/django-lab-app:latest && \
            docker compose -f /opt/app/docker-compose.yml up -d --force-recreate app'
