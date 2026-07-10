@@ -29,12 +29,12 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build image
-        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-app:${{ github.sha }} -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-django:latest .
+        run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/django-lab-app:${{ github.sha }} -t ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-django:latest .
 
       - name: Push image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-django:${{ github.sha }}
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-django:latest
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/django-lab-app:${{ github.sha }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/django-lab-app:latest
 
   deploy:
     needs: build-test-push
@@ -43,5 +43,5 @@ jobs:
       - name: Deploy to App Server
         run: |
           ssh -o StrictHostKeyChecking=no vagrant@192.168.56.11 \
-          'docker pull ${{ secrets.DOCKERHUB_USERNAME }}/devops-lab-django:latest && \
+          'docker pull ${{ secrets.DOCKERHUB_USERNAME }}/django-lab-app:latest && \
            docker compose -f /opt/app/docker-compose.yml up -d --force-recreate app'
